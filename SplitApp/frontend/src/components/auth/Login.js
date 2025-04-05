@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { 
-  Container,
-  Typography,
-  TextField,
-  Button,
-  Grid,
-  Link,
-  Paper,
-  Box,
   Avatar,
-  CircularProgress,
-  makeStyles
+  Button,
+  TextField,
+  FormControlLabel,
+  Checkbox,
+  Link,
+  Grid,
+  Box,
+  Typography,
+  Container,
+  Paper
 } from '@material-ui/core';
-import { LockOutlined } from '@material-ui/icons';
-import { Formik, Form, Field } from 'formik';
+import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
+import { makeStyles } from '@material-ui/core/styles';
+import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 
 const useStyles = makeStyles((theme) => ({
@@ -24,34 +25,24 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    maxWidth: '500px',
-    margin: '0 auto',
   },
   avatar: {
     margin: theme.spacing(1),
     backgroundColor: theme.palette.secondary.main,
   },
   form: {
-    width: '100%',
+    width: '100%', // Fix IE 11 issue.
     marginTop: theme.spacing(1),
   },
   submit: {
     margin: theme.spacing(3, 0, 2),
   },
-  spinner: {
-    marginLeft: theme.spacing(1),
-  },
-  error: {
-    color: theme.palette.error.main,
-    marginTop: theme.spacing(2),
-  },
 }));
 
 // Validation schema
 const LoginSchema = Yup.object().shape({
-  email: Yup.string()
-    .email('Invalid email address')
-    .required('Email is required'),
+  username: Yup.string()
+    .required('Username is required'),
   password: Yup.string()
     .required('Password is required'),
 });
@@ -59,67 +50,57 @@ const LoginSchema = Yup.object().shape({
 function Login() {
   const classes = useStyles();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (values) => {
-    setLoading(true);
-    setError('');
-
-    try {
-      // In a real app, you would make an API call to authenticate the user
-      // For now, we'll just simulate a successful login after a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo: Just navigate to dashboard on successful login
-      console.log('Login successful:', values);
-      navigate('/');
-    } catch (err) {
-      console.error('Login failed:', err);
-      setError('Invalid email or password. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  // For demo purposes, use mock login
+  const handleLogin = (values, { setSubmitting }) => {
+    setTimeout(() => {
+      // Simulate authentication
+      if (values.username === 'demo' && values.password === 'password') {
+        // In a real app, you would store the auth token in localStorage or context
+        navigate('/');
+      } else {
+        setError('Invalid username or password');
+      }
+      setSubmitting(false);
+    }, 1000);
   };
 
   return (
-    <Container component="main" maxWidth="sm">
-      <Paper elevation={3} className={classes.paper}>
+    <Container component="main" maxWidth="xs">
+      <Paper className={classes.paper} elevation={3}>
         <Avatar className={classes.avatar}>
-          <LockOutlined />
+          <LockOutlinedIcon />
         </Avatar>
         <Typography component="h1" variant="h5">
-          Sign In
+          Sign in
         </Typography>
         
-        {error && (
-          <Typography className={classes.error} variant="body2">
-            {error}
-          </Typography>
-        )}
+        {error && <Typography color="error">{error}</Typography>}
         
         <Formik
-          initialValues={{ email: '', password: '' }}
+          initialValues={{ username: '', password: '', remember: false }}
           validationSchema={LoginSchema}
-          onSubmit={handleSubmit}
+          onSubmit={handleLogin}
         >
-          {({ errors, touched }) => (
+          {({ values, errors, touched, handleChange, handleBlur, isSubmitting }) => (
             <Form className={classes.form}>
-              <Field
-                as={TextField}
+              <TextField
                 variant="outlined"
                 margin="normal"
                 fullWidth
-                id="email"
-                label="Email Address"
-                name="email"
-                autoComplete="email"
+                id="username"
+                label="Username"
+                name="username"
+                autoComplete="username"
                 autoFocus
-                error={touched.email && Boolean(errors.email)}
-                helperText={touched.email && errors.email}
+                value={values.username}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={touched.username && Boolean(errors.username)}
+                helperText={touched.username && errors.username}
               />
-              <Field
-                as={TextField}
+              <TextField
                 variant="outlined"
                 margin="normal"
                 fullWidth
@@ -128,8 +109,22 @@ function Login() {
                 type="password"
                 id="password"
                 autoComplete="current-password"
+                value={values.password}
+                onChange={handleChange}
+                onBlur={handleBlur}
                 error={touched.password && Boolean(errors.password)}
                 helperText={touched.password && errors.password}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="remember"
+                    color="primary"
+                    checked={values.remember}
+                    onChange={handleChange}
+                  />
+                }
+                label="Remember me"
               />
               <Button
                 type="submit"
@@ -137,16 +132,13 @@ function Login() {
                 variant="contained"
                 color="primary"
                 className={classes.submit}
-                disabled={loading}
+                disabled={isSubmitting}
               >
-                Sign In
-                {loading && (
-                  <CircularProgress size={24} className={classes.spinner} />
-                )}
+                {isSubmitting ? 'Signing in...' : 'Sign In'}
               </Button>
               <Grid container>
                 <Grid item xs>
-                  <Link component={RouterLink} to="/forgot-password" variant="body2">
+                  <Link component={RouterLink} to="#" variant="body2">
                     Forgot password?
                   </Link>
                 </Grid>
@@ -160,16 +152,9 @@ function Login() {
           )}
         </Formik>
         
-        <Box mt={4}>
+        <Box mt={3}>
           <Typography variant="body2" color="textSecondary" align="center">
-            By signing in, you agree to our{' '}
-            <Link component={RouterLink} to="/terms">
-              Terms of Service
-            </Link>{' '}
-            and{' '}
-            <Link component={RouterLink} to="/privacy">
-              Privacy Policy
-            </Link>
+            Demo credentials: username "demo", password "password"
           </Typography>
         </Box>
       </Paper>
