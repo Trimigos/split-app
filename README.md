@@ -1,382 +1,141 @@
-# SplitApp
+# SplitApp - Expense Sharing Application
 
-A web application for splitting expenses among friends, roommates, or groups.
+SplitApp is a comprehensive expense-sharing application that allows users to split expenses among groups of people. It's perfect for roommates, trips with friends, or any situation where expenses need to be shared fairly.
 
-## Project Overview
+## Features
 
-SplitApp is a user-friendly expense sharing application that helps users track, manage, and settle shared expenses. Whether you're on a trip with friends, sharing an apartment, or managing group expenses, SplitApp makes it easy to keep track of who owes whom.
-
-## Core Features
-
-- **User Management**: Register, login, profile management
+- **User Management**: Register, login, and manage user profiles
 - **Group Management**: Create and manage expense groups
-- **Expense Tracking**: Add, edit, and delete expenses
-- **Flexible Splitting Options**: Split expenses equally, by percentage, or by specific amounts
-- **Balance Tracking**: View who oweswhat to whom
-- **Settlement**: Mark expenses as settled and keep transaction history
-- **Dashboard**: Visual representation of expenses and balances
+- **Expense Tracking**: Add, categorize, and track expenses within groups
+- **Expense Splitting**: Split expenses equally or unequally among group members
+- **Settlement Tracking**: Keep track of who owes whom, and mark settlements as completed
+- **Dashboard**: Visualize expense summaries and balances
 
-## Technical Architecture
+## Project Structure
 
-### Frontend
-- React.js for the web interface
-- Redux for state management
-- Responsive design for mobile and desktop users
+The project is organized into three main layers:
 
-### Backend
-- Spring Boot
-- RESTful API architecture
-- JWT for authentication - Signin with social accounts like google
+### Backend (Spring Boot)
+
+The backend is built using Spring Boot and provides RESTful APIs for the frontend.
+
+```
+backend/
+  ├── src/main/java/com/splitapp/
+  │   ├── config/            # Application configuration
+  │   ├── controller/        # REST API controllers
+  │   ├── model/             # Entity classes
+  │   ├── repository/        # Data access layer
+  │   ├── service/           # Business logic
+  │   ├── security/          # Security configuration
+  │   └── SplitAppApplication.java
+  └── src/main/resources/
+      └── application.properties
+```
+
+### Frontend (React)
+
+The frontend is built with React and Material-UI for a responsive and modern user interface.
+
+```
+frontend/
+  ├── public/
+  └── src/
+      ├── components/
+      │   ├── auth/          # Authentication components
+      │   ├── layout/        # Layout components
+      │   ├── pages/         # Page components
+      │   ├── groups/        # Group management components
+      │   ├── expenses/      # Expense management components
+      │   └── settlements/   # Settlement management components
+      ├── services/          # API service calls
+      ├── utils/             # Utility functions
+      ├── App.js
+      └── index.js
+```
 
 ### Database
-- MySQL for relational data storage
-- Spring Data JPA for object-relational mapping
 
-## Database Schema
-
-### 1. Users
-```sql
-CREATE TABLE users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  email VARCHAR(100) NOT NULL UNIQUE,
-  password VARCHAR(255) NOT NULL,
-  phone VARCHAR(20),
-  avatar_url VARCHAR(255),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-```
-
-**Spring Boot Entity:**
-```java
-@Entity
-@Table(name = "users")
-public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
-    @NotBlank
-    private String name;
-    
-    @NotBlank
-    @Email
-    @Column(unique = true)
-    private String email;
-    
-    @NotBlank
-    private String password;
-    
-    private String phone;
-    
-    private String avatarUrl;
-    
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-    
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
-    
-    // Relationships
-    @OneToMany(mappedBy = "creator")
-    private List<Group> createdGroups;
-    
-    @ManyToMany(mappedBy = "members")
-    private List<Group> groups;
-    
-    // Getters and setters
-}
-```
-
-### 2. Groups
-```sql
-CREATE TABLE groups (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  description TEXT,
-  creator_id INT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (creator_id) REFERENCES users(id)
-);
-```
-
-**Spring Boot Entity:**
-```java
-@Entity
-@Table(name = "groups")
-public class Group {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
-    @NotBlank
-    private String name;
-    
-    private String description;
-    
-    @ManyToOne
-    @JoinColumn(name = "creator_id", nullable = false)
-    private User creator;
-    
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-    
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
-    
-    @ManyToMany
-    @JoinTable(
-        name = "group_members",
-        joinColumns = @JoinColumn(name = "group_id"),
-        inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
-    private List<User> members;
-    
-    // Getters and setters
-}
-```
-
-### 3. Group_Members
-```sql
-CREATE TABLE group_members (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  group_id INT NOT NULL,
-  user_id INT NOT NULL,
-  joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (group_id) REFERENCES groups(id),
-  FOREIGN KEY (user_id) REFERENCES users(id),
-  UNIQUE KEY unique_member (group_id, user_id)
-);
-```
-
-**Spring Boot Entity:**
-```java
-@Entity
-@Table(name = "group_members", 
-       uniqueConstraints = @UniqueConstraint(columnNames = {"group_id", "user_id"}))
-public class GroupMember {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
-    @ManyToOne
-    @JoinColumn(name = "group_id", nullable = false)
-    private Group group;
-    
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-    
-    @CreationTimestamp
-    private LocalDateTime joinedAt;
-    
-    // Getters and setters
-}
-```
-
-### 4. Expenses
-```sql
-CREATE TABLE expenses (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  description VARCHAR(255) NOT NULL,
-  amount DECIMAL(10,2) NOT NULL,
-  paid_by INT NOT NULL,
-  group_id INT NOT NULL,
-  split_type ENUM('equal', 'percentage', 'exact') NOT NULL,
-  date DATE NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (paid_by) REFERENCES users(id),
-  FOREIGN KEY (group_id) REFERENCES groups(id)
-);
-```
-
-**Spring Boot Entity:**
-```java
-@Entity
-@Table(name = "expenses")
-public class Expense {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
-    @NotBlank
-    private String description;
-    
-    @NotNull
-    @Column(precision = 10, scale = 2)
-    private BigDecimal amount;
-    
-    @ManyToOne
-    @JoinColumn(name = "paid_by", nullable = false)
-    private User paidBy;
-    
-    @ManyToOne
-    @JoinColumn(name = "group_id", nullable = false)
-    private Group group;
-    
-    @Enumerated(EnumType.STRING)
-    @NotNull
-    private SplitType splitType;
-    
-    @NotNull
-    private LocalDate date;
-    
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-    
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
-    
-    @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL)
-    private List<ExpenseShare> shares;
-    
-    // Getters and setters
-    
-    public enum SplitType {
-        EQUAL, PERCENTAGE, EXACT
-    }
-}
-```
-
-### 5. ExpenseShares
-```sql
-CREATE TABLE expense_shares (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  expense_id INT NOT NULL,
-  user_id INT NOT NULL,
-  amount DECIMAL(10,2) NOT NULL,
-  is_paid BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (expense_id) REFERENCES expenses(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id)
-);
-```
-
-**Spring Boot Entity:**
-```java
-@Entity
-@Table(name = "expense_shares")
-public class ExpenseShare {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
-    @ManyToOne
-    @JoinColumn(name = "expense_id", nullable = false)
-    private Expense expense;
-    
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-    
-    @NotNull
-    @Column(precision = 10, scale = 2)
-    private BigDecimal amount;
-    
-    private boolean isPaid = false;
-    
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-    
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
-    
-    // Getters and setters
-}
-```
-
-### 6. Settlements
-```sql
-CREATE TABLE settlements (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  paid_by INT NOT NULL,
-  paid_to INT NOT NULL,
-  amount DECIMAL(10,2) NOT NULL,
-  date DATE NOT NULL,
-  notes TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (paid_by) REFERENCES users(id),
-  FOREIGN KEY (paid_to) REFERENCES users(id)
-);
-```
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - User login
-- `GET /api/auth/logout` - User logout
-- `GET /api/auth/me` - Get current user
-
-### Users
-- `GET /api/users` - Get all users
-- `GET /api/users/:id` - Get user by ID
-- `PUT /api/users/:id` - Update user
-- `GET /api/users/:id/balances` - Get balances for a user
-
-### Groups
-- `POST /api/groups` - Create new group
-- `GET /api/groups` - Get all groups for user
-- `GET /api/groups/:id` - Get group by ID
-- `PUT /api/groups/:id` - Update group
-- `DELETE /api/groups/:id` - Delete group
-- `POST /api/groups/:id/members` - Add members to group
-- `DELETE /api/groups/:id/members/:userId` - Remove member from group
-
-### Expenses
-- `POST /api/expenses` - Create new expense
-- `GET /api/expenses` - Get all expenses for user
-- `GET /api/expenses/:id` - Get expense by ID
-- `PUT /api/expenses/:id` - Update expense
-- `DELETE /api/expenses/:id` - Delete expense
-- `GET /api/groups/:id/expenses` - Get expenses for a group
-
-### Settlements
-- `POST /api/settlements` - Create new settlement
-- `GET /api/settlements` - Get all settlements for user
-- `GET /api/settlements/:id` - Get settlement by ID
+MySQL database with tables for users, groups, expenses, expense splits, and settlements.
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js (v14+)
+
+- Java 11 or higher
+- Node.js and npm
 - MySQL
-- npm or yarn
 
-### Installation
-1. Clone the repository
+### Backend Setup
+
+1. Navigate to the backend directory:
    ```
-   git clone https://github.com/yourusername/splitapp.git
-   cd splitapp
+   cd SplitApp/backend
    ```
 
-2. Install dependencies
+2. Configure the database connection in `src/main/resources/application.properties`.
+
+3. Run the Spring Boot application:
+   ```
+   ./mvnw spring-boot:run
+   ```
+
+### Frontend Setup
+
+1. Navigate to the frontend directory:
+   ```
+   cd SplitApp/frontend
+   ```
+
+2. Install dependencies:
    ```
    npm install
    ```
 
-3. Set up environment variables
-   Create a `.env` file in the root directory with:
+3. Start the development server:
    ```
-   MYSQL_URI=your_mysql_connection_string
-   JWT_SECRET=your_jwt_secret
-   PORT=5000
+   npm start
    ```
 
-4. Start the development server
-   ```
-   npm run dev
-   ```
+4. Open http://localhost:3000 in your browser
 
-## Future Enhancements
-- Mobile app using React Native
-- Email notifications for new expenses and reminders
-- Integration with payment gateways
-- Currency conversion for international expenses
-- Receipt scanning and automatic expense creation
-- Expense categories and reporting
+## API Endpoints
+
+### User APIs
+- `GET /api/users` - Get all users
+- `GET /api/users/{id}` - Get user by ID
+- `POST /api/users` - Create a new user
+- `PUT /api/users/{id}` - Update a user
+- `DELETE /api/users/{id}` - Delete a user
+
+### Group APIs
+- `GET /api/groups` - Get all groups
+- `GET /api/groups/{id}` - Get group by ID
+- `POST /api/groups` - Create a new group
+- `PUT /api/groups/{id}` - Update a group
+- `DELETE /api/groups/{id}` - Delete a group
+- `POST /api/groups/{groupId}/members/{userId}` - Add a member to a group
+- `DELETE /api/groups/{groupId}/members/{userId}` - Remove a member from a group
+
+### Expense APIs
+- `GET /api/expenses` - Get all expenses
+- `GET /api/expenses/{id}` - Get expense by ID
+- `POST /api/expenses` - Create a new expense
+- `DELETE /api/expenses/{id}` - Delete an expense
+- `GET /api/expenses/group/{groupId}` - Get expenses by group
+- `GET /api/expenses/{expenseId}/splits` - Get splits for an expense
+
+### Settlement APIs
+- `GET /api/settlements` - Get all settlements
+- `GET /api/settlements/{id}` - Get settlement by ID
+- `POST /api/settlements` - Create a new settlement
+- `PUT /api/settlements/{id}/status` - Update settlement status
+- `DELETE /api/settlements/{id}` - Delete a settlement
+
+## Contributing
+
+Please feel free to submit issues or pull requests to improve the application.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
