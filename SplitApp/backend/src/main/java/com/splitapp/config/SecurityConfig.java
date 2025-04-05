@@ -24,6 +24,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .csrf().disable()
             .authorizeRequests()
             .antMatchers("/api/**").permitAll() // For development, we'll allow all requests
+            // Swagger UI access
+            .antMatchers("/v3/api-docs/**", 
+                         "/swagger-ui/**", 
+                         "/swagger-ui.html", 
+                         "/swagger-resources/**", 
+                         "/webjars/**").permitAll()
             .anyRequest().authenticated();
     }
 
