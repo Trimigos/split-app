@@ -1,8 +1,18 @@
 import axios from 'axios';
 
+// Determine the base URL for API calls
+const getBaseUrl = () => {
+  // Check if we have a BACKEND_URL environment variable (from Container App)
+  if (process.env.REACT_APP_BACKEND_URL || window.BACKEND_URL) {
+    return process.env.REACT_APP_BACKEND_URL || window.BACKEND_URL;
+  }
+  // In development, use the proxy configured in package.json
+  return '/api';
+};
+
 // Create an axios instance with default config
 const api = axios.create({
-  baseURL: '/api', // This will use the proxy configured in package.json
+  baseURL: getBaseUrl(),
   timeout: 10000,  // 10 seconds timeout
   headers: {
     'Content-Type': 'application/json'

@@ -53,40 +53,49 @@ resource acr 'Microsoft.ContainerRegistry/registries@2021-09-01' = {
   }
 }
 
-// Create MySQL server
-resource mySqlServer 'Microsoft.DBforMySQL/servers@2017-12-01' = {
+// Create MySQL Flexible server
+resource mySqlServer 'Microsoft.DBforMySQL/flexibleServers@2021-05-01' = {
   name: mysqlServerName
   location: location
+  sku: {
+    name: 'Standard_B1ms'
+    tier: 'Burstable'
+  }
   properties: {
+    version: mySqlVersion
     administratorLogin: administratorLogin
     administratorLoginPassword: administratorLoginPassword
-    version: mySqlVersion
-    sslEnforcement: 'Enabled'
-    minimalTlsVersion: 'TLS1_2'
-    createMode: 'Default'
-    storageProfile: {
-      storageMB: 20480
+    storage: {
+      storageSizeGB: 20
+      autoGrow: 'Enabled'
+    }
+    backup: {
       backupRetentionDays: 7
       geoRedundantBackup: 'Disabled'
     }
-  }
-
-  // Create MySQL firewall rule to allow Azure services
-  resource firewallRules 'firewallRules' = {
-    name: 'AllowAllAzureIPs'
-    properties: {
-      startIpAddress: '0.0.0.0'
-      endIpAddress: '0.0.0.0'
+    highAvailability: {
+      mode: 'Disabled'
     }
   }
+}
 
-  // Create MySQL database
-  resource mySqlDb 'databases' = {
-    name: mysqlDbName
-    properties: {
-      charset: 'utf8'
-      collation: 'utf8_general_ci'
-    }
+// Create MySQL database
+resource mySqlDb 'Microsoft.DBforMySQL/flexibleServers/databases@2021-05-01' = {
+  name: mysqlDbName
+  parent: mySqlServer
+  properties: {
+    charset: 'utf8'
+    collation: 'utf8_general_ci'
+  }
+}
+
+// Create MySQL firewall rule to allow Azure services
+resource firewallRule 'Microsoft.DBforMySQL/flexibleServers/firewallRules@2021-05-01' = {
+  name: 'AllowAllAzureIPs'
+  parent: mySqlServer
+  properties: {
+    startIpAddress: '0.0.0.0'
+    endIpAddress: '255.255.255.255'
   }
 }
 

@@ -13,7 +13,7 @@ DB_PASSWORD=$(openssl rand -base64 16)
 
 # Log in to Azure
 echo "Logging in to Azure..."
-az login --use-device-code
+az login
 
 # Create resource group
 echo "Creating resource group..."
@@ -23,13 +23,13 @@ az group create --name $RESOURCE_GROUP --location $LOCATION
 echo "Creating Azure Container Registry..."
 az acr create --resource-group $RESOURCE_GROUP --name $ACR_NAME --sku Basic --admin-enabled true
 
-# Build backend image directly in Azure ACR
-echo "Building backend image in Azure ACR..."
-az acr build --registry $ACR_NAME --image ${APP_NAME}-backend:latest --platform linux ./SplitApp/backend
+# # Build backend image directly in Azure ACR
+# echo "Building backend image in Azure ACR..."
+# az acr build --registry $ACR_NAME --image ${APP_NAME}-backend:latest --platform linux ./SplitApp/backend
 
-# Build frontend image directly in Azure ACR
-echo "Building frontend image in Azure ACR..."
-az acr build --registry $ACR_NAME --image ${APP_NAME}-frontend:latest --platform linux ./SplitApp/frontend
+# # Build frontend image directly in Azure ACR
+# echo "Building frontend image in Azure ACR..."
+# az acr build --registry $ACR_NAME --image ${APP_NAME}-frontend:latest --platform linux ./SplitApp/frontend
 
 # Deploy with Bicep
 echo "Deploying Azure resources..."
