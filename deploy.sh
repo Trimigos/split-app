@@ -19,21 +19,17 @@ az login --use-device-code
 echo "Creating resource group..."
 az group create --name $RESOURCE_GROUP --location $LOCATION
 
-# Build and push Docker images
-echo "Building and pushing Docker images..."
+# Create Azure Container Registry
+echo "Creating Azure Container Registry..."
 az acr create --resource-group $RESOURCE_GROUP --name $ACR_NAME --sku Basic --admin-enabled true
-az acr login --name $ACR_NAME
 
-# Build backend image
-echo "Building backend image..."
-cd ./SplitApp/backend
-az acr build --registry $ACR_NAME --image ${APP_NAME}-backend:latest .
+# Build backend image directly in Azure ACR
+echo "Building backend image in Azure ACR..."
+az acr build --registry $ACR_NAME --image ${APP_NAME}-backend:latest --platform linux ./SplitApp/backend
 
-# Build frontend image
-echo "Building frontend image..."
-cd ../frontend
-az acr build --registry $ACR_NAME --image ${APP_NAME}-frontend:latest .
-cd ../..
+# Build frontend image directly in Azure ACR
+echo "Building frontend image in Azure ACR..."
+az acr build --registry $ACR_NAME --image ${APP_NAME}-frontend:latest --platform linux ./SplitApp/frontend
 
 # Deploy with Bicep
 echo "Deploying Azure resources..."
