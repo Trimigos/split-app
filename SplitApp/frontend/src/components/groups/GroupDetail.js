@@ -37,6 +37,9 @@ import {
   Edit as EditIcon,
   Email as EmailIcon
 } from '@material-ui/icons';
+import groupService from '../../services/groupService';
+import expenseService from '../../services/expenseService';
+import settlementService from '../../services/settlementService';
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -149,112 +152,37 @@ function GroupDetail() {
   const [tabValue, setTabValue] = useState(0);
   const [addMemberDialog, setAddMemberDialog] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    // Simulate API call to fetch group details
     const fetchGroupDetails = async () => {
       try {
-        // In a real application, these would be API calls
-        await new Promise(resolve => setTimeout(resolve, 800));
+        setLoading(true);
         
-        // Sample data
-        const groupData = {
-          id: parseInt(id),
-          name: 'Trip to Paris',
-          description: 'Expenses for our Paris vacation in Summer 2023',
-          createdAt: '2023-02-15',
-          createdBy: 'John Doe',
-          totalExpenses: 1250.75
-        };
+        // Fetch group data
+        const groupResponse = await groupService.getGroup(id);
+        setGroup(groupResponse.data);
         
-        const membersData = [
-          { id: 1, name: 'John Doe', email: 'john@example.com', isCreator: true },
-          { id: 2, name: 'Alice Smith', email: 'alice@example.com', isCreator: false },
-          { id: 3, name: 'Bob Johnson', email: 'bob@example.com', isCreator: false },
-          { id: 4, name: 'Emma Wilson', email: 'emma@example.com', isCreator: false },
-          { id: 5, name: 'Michael Brown', email: 'michael@example.com', isCreator: false }
-        ];
+        if (groupResponse.data && groupResponse.data.members) {
+          setMembers(groupResponse.data.members);
+        }
         
-        const expensesData = [
-          { 
-            id: 1, 
-            description: 'Dinner at Le Restaurant',
-            amount: 245.50,
-            paidBy: 'John Doe',
-            date: '2023-03-15',
-            splits: [
-              { member: 'John Doe', amount: 49.10 },
-              { member: 'Alice Smith', amount: 49.10 },
-              { member: 'Bob Johnson', amount: 49.10 },
-              { member: 'Emma Wilson', amount: 49.10 },
-              { member: 'Michael Brown', amount: 49.10 }
-            ]
-          },
-          { 
-            id: 2, 
-            description: 'Museum tickets',
-            amount: 75.00,
-            paidBy: 'Alice Smith',
-            date: '2023-03-16',
-            splits: [
-              { member: 'John Doe', amount: 15.00 },
-              { member: 'Alice Smith', amount: 15.00 },
-              { member: 'Bob Johnson', amount: 15.00 },
-              { member: 'Emma Wilson', amount: 15.00 },
-              { member: 'Michael Brown', amount: 15.00 }
-            ]
-          },
-          { 
-            id: 3, 
-            description: 'Taxi rides',
-            amount: 62.25,
-            paidBy: 'Bob Johnson',
-            date: '2023-03-17',
-            splits: [
-              { member: 'John Doe', amount: 12.45 },
-              { member: 'Alice Smith', amount: 12.45 },
-              { member: 'Bob Johnson', amount: 12.45 },
-              { member: 'Emma Wilson', amount: 12.45 },
-              { member: 'Michael Brown', amount: 12.45 }
-            ]
-          }
-        ];
+        // Fetch expenses for this group
+        const expensesResponse = await expenseService.getExpenses(id);
+        setExpenses(expensesResponse.data);
         
-        const settlementsData = [
-          {
-            id: 1,
-            from: 'Alice Smith',
-            to: 'John Doe',
-            amount: 34.10,
-            status: 'PENDING',
-            date: '2023-03-18'
-          },
-          {
-            id: 2,
-            from: 'Emma Wilson',
-            to: 'John Doe',
-            amount: 36.65,
-            status: 'COMPLETED',
-            date: '2023-03-19'
-          }
-        ];
+        // Fetch settlements for this group
+        const settlementsResponse = await settlementService.getSettlements(id);
+        setSettlements(settlementsResponse.data);
         
-        const balancesData = [
-          { member: 'John Doe', balance: 134.85 },
-          { member: 'Alice Smith', balance: -34.10 },
-          { member: 'Bob Johnson', balance: 22.35 },
-          { member: 'Emma Wilson', balance: -36.65 },
-          { member: 'Michael Brown', balance: -86.45 }
-        ];
+        // Fetch balances for this group
+        const balancesResponse = await settlementService.getUnsettledBalances(id);
+        setBalances(balancesResponse.data);
         
-        setGroup(groupData);
-        setMembers(membersData);
-        setExpenses(expensesData);
-        setSettlements(settlementsData);
-        setBalances(balancesData);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching group details:', error);
+        setError('Failed to load group details. Please try again later.');
         setLoading(false);
       }
     };
@@ -275,10 +203,40 @@ function GroupDetail() {
     setNewMemberEmail('');
   };
   
-  const handleAddMember = () => {
-    // Logic to add a new member
-    console.log('Adding member:', newMemberEmail);
-    handleAddMemberDialogClose();
+  const handleAddMember = async () => {
+    try {
+      if (!newMemberEmail || !newMemberEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        alert('Please enter a valid email address');
+        return;
+      }
+
+      await groupService.addMember(id, { email: newMemberEmail });
+      
+      // Refresh members list
+      const groupResponse = await groupService.getGroup(id);
+      if (groupResponse.data && groupResponse.data.members) {
+        setMembers(groupResponse.data.members);
+      }
+      
+      handleAddMemberDialogClose();
+    } catch (error) {
+      console.error('Error adding member:', error);
+      alert('Failed to add member. Please try again.');
+    }
+  };
+
+  const handleRemoveMember = async (memberId) => {
+    if (window.confirm('Are you sure you want to remove this member?')) {
+      try {
+        await groupService.removeMember(id, memberId);
+        
+        // Update members list
+        setMembers(members.filter(member => member.id !== memberId));
+      } catch (error) {
+        console.error('Error removing member:', error);
+        alert('Failed to remove member. Please try again.');
+      }
+    }
   };
 
   if (loading) {
@@ -577,7 +535,7 @@ function GroupDetail() {
                         <EmailIcon />
                       </IconButton>
                       {!member.isCreator && (
-                        <IconButton edge="end" aria-label="delete">
+                        <IconButton edge="end" aria-label="delete" onClick={() => handleRemoveMember(member.id)}>
                           <DeleteIcon />
                         </IconButton>
                       )}

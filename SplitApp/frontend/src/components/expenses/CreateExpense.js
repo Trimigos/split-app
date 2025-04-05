@@ -38,6 +38,8 @@ import {
 } from '@material-ui/icons';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
+import expenseService from '../../services/expenseService';
+import groupService from '../../services/groupService';
 
 // Removing @material-ui/pickers import
 
@@ -162,16 +164,11 @@ function CreateExpense() {
     // Fetch groups and members for the selected group
     const fetchData = async () => {
       try {
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        // Sample groups data
-        const groupsData = [
-          { id: '1', name: 'Trip to Paris' },
-          { id: '2', name: 'Roommates' },
-          { id: '3', name: 'Office Lunch' }
-        ];
+        setLoading(true);
         
-        setGroups(groupsData);
+        // Fetch groups from API
+        const groupsResponse = await groupService.getGroups();
+        setGroups(groupsResponse.data);
 
         // If we have a group ID from URL, fetch its members
         if (groupIdFromUrl) {
@@ -190,27 +187,21 @@ function CreateExpense() {
 
   const fetchMembers = async (groupId) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Fetch group details to get members
+      const groupResponse = await groupService.getGroup(groupId);
       
-      // Sample members for the selected group
-      const membersData = [
-        { id: '1', name: 'John Doe', email: 'john@example.com' },
-        { id: '2', name: 'Alice Smith', email: 'alice@example.com' },
-        { id: '3', name: 'Bob Johnson', email: 'bob@example.com' },
-        { id: '4', name: 'Emma Wilson', email: 'emma@example.com' },
-        { id: '5', name: 'Michael Brown', email: 'michael@example.com' }
-      ];
-      
-      setMembers(membersData);
+      if (groupResponse.data && groupResponse.data.members) {
+        setMembers(groupResponse.data.members);
 
-      // Initialize equal splits for all members
-      const initialSplits = membersData.map(member => ({
-        memberId: member.id,
-        memberName: member.name,
-        amount: 0
-      }));
-
-      setCustomSplits(initialSplits);
+        // Initialize equal splits for all members
+        const initialSplits = groupResponse.data.members.map(member => ({
+          memberId: member.id,
+          memberName: member.name,
+          amount: 0
+        }));
+        
+        setCustomSplits(initialSplits);
+      }
     } catch (error) {
       console.error('Error fetching members:', error);
     }
@@ -281,18 +272,26 @@ function CreateExpense() {
     setSubmitting(true);
     
     try {
-      // In a real app, this would be an API call to create the expense
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      // Create expense data object to send to API
       const finalExpenseData = {
-        ...expenseData,
-        splits: customSplits
+        description: expenseData.description,
+        amount: parseFloat(expenseData.amount),
+        groupId: expenseData.groupId,
+        paidById: expenseData.paidBy,
+        date: expenseData.expenseDate.toISOString().split('T')[0],
+        splits: customSplits.map(split => ({
+          userId: split.memberId,
+          amount: split.amount
+        }))
       };
       
-      console.log('Expense created:', finalExpenseData);
+      // Call API to create expense
+      const response = await expenseService.createExpense(finalExpenseData);
+      
       handleNext();
     } catch (error) {
       console.error('Error creating expense:', error);
+      alert('Failed to create expense. Please try again.');
     } finally {
       setSubmitting(false);
     }

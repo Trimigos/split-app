@@ -16,6 +16,7 @@ import {
   makeStyles
 } from '@material-ui/core';
 import { Add as AddIcon, Group as GroupIcon } from '@material-ui/icons';
+import groupService from '../../services/groupService';
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -72,49 +73,18 @@ function GroupList() {
   const classes = useStyles();
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    // Simulate API call to fetch groups
     const fetchGroups = async () => {
       try {
-        // In a real application, this would be an API call
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Sample data
-        const sampleGroups = [
-          {
-            id: 1,
-            name: 'Trip to Paris',
-            description: 'Expenses for our Paris vacation',
-            memberCount: 5,
-            totalExpenses: 1250.75,
-            isCreator: true,
-            createdAt: '2023-02-15'
-          },
-          {
-            id: 2,
-            name: 'Roommates',
-            description: 'Monthly apartment expenses',
-            memberCount: 3,
-            totalExpenses: 450.25,
-            isCreator: false,
-            createdAt: '2023-01-10'
-          },
-          {
-            id: 3,
-            name: 'Office Lunch',
-            description: 'Weekly team lunch expenses',
-            memberCount: 8,
-            totalExpenses: 124.50,
-            isCreator: true,
-            createdAt: '2023-03-01'
-          }
-        ];
-        
-        setGroups(sampleGroups);
+        setLoading(true);
+        const response = await groupService.getGroups();
+        setGroups(response.data);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching groups:', error);
+        setError('Failed to load groups. Please try again later.');
         setLoading(false);
       }
     };
@@ -151,6 +121,12 @@ function GroupList() {
           Create Group
         </Button>
       </div>
+      
+      {error && (
+        <Box mb={3}>
+          <Typography color="error">{error}</Typography>
+        </Box>
+      )}
       
       {groups.length === 0 ? (
         <Card className={classes.noGroups}>

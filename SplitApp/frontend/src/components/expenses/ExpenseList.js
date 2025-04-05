@@ -39,6 +39,8 @@ import {
   LocalMovies,
   Category
 } from '@material-ui/icons';
+import expenseService from '../../services/expenseService';
+import groupService from '../../services/groupService';
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -125,6 +127,7 @@ function ExpenseList() {
   const [groupFilter, setGroupFilter] = useState('all');
   const [groups, setGroups] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [error, setError] = useState('');
 
   // Helper function to get icon for category
   const getCategoryIcon = (category) => {
@@ -147,109 +150,35 @@ function ExpenseList() {
   };
 
   useEffect(() => {
-    // Simulate API call to fetch expenses
-    const fetchExpenses = async () => {
+    // Fetch expenses and groups from API
+    const fetchData = async () => {
       try {
-        await new Promise(resolve => setTimeout(resolve, 800));
+        setLoading(true);
         
-        // Sample data
-        const expenseData = [
-          {
-            id: 1,
-            description: 'Dinner at Italian Restaurant',
-            totalAmount: 120.50,
-            paidBy: 'John Doe',
-            date: '2025-04-01',
-            category: 'FOOD',
-            groupId: 1,
-            groupName: 'Trip to Paris',
-            userShare: -30.50,
-            participants: ['John Doe', 'Alice Smith', 'Emma Wilson', 'Bob Johnson']
-          },
-          {
-            id: 2,
-            description: 'Taxi to Airport',
-            totalAmount: 45.75,
-            paidBy: 'Alice Smith',
-            date: '2025-04-02',
-            category: 'TRANSPORT',
-            groupId: 1,
-            groupName: 'Trip to Paris',
-            userShare: 15.25,
-            participants: ['John Doe', 'Alice Smith', 'Emma Wilson']
-          },
-          {
-            id: 3,
-            description: 'Grocery shopping',
-            totalAmount: 78.30,
-            paidBy: 'John Doe',
-            date: '2025-04-03',
-            category: 'GROCERIES',
-            groupId: 2,
-            groupName: 'Roommates',
-            userShare: -39.15,
-            participants: ['John Doe', 'Bob Johnson']
-          },
-          {
-            id: 4,
-            description: 'Movie tickets',
-            totalAmount: 32.50,
-            paidBy: 'Emma Wilson',
-            date: '2025-04-02',
-            category: 'ENTERTAINMENT',
-            groupId: 1,
-            groupName: 'Trip to Paris',
-            userShare: 8.12,
-            participants: ['John Doe', 'Alice Smith', 'Emma Wilson', 'Bob Johnson']
-          },
-          {
-            id: 5,
-            description: 'Hotel for weekend',
-            totalAmount: 250.00,
-            paidBy: 'Bob Johnson',
-            date: '2025-03-28',
-            category: 'ACCOMMODATION',
-            groupId: 1,
-            groupName: 'Trip to Paris',
-            userShare: 62.50,
-            participants: ['John Doe', 'Alice Smith', 'Emma Wilson', 'Bob Johnson']
-          },
-          {
-            id: 6,
-            description: 'Lunch at work',
-            totalAmount: 35.75,
-            paidBy: 'John Doe',
-            date: '2025-04-01',
-            category: 'FOOD',
-            groupId: 3,
-            groupName: 'Office Lunch',
-            userShare: -17.87,
-            participants: ['John Doe', 'Emma Wilson']
-          },
-        ];
+        // Fetch expenses
+        const expensesResponse = await expenseService.getExpenses();
         
-        const groupsData = [
-          { id: 1, name: 'Trip to Paris' },
-          { id: 2, name: 'Roommates' },
-          { id: 3, name: 'Office Lunch' },
-        ];
+        // Fetch groups for filtering
+        const groupsResponse = await groupService.getGroups();
         
+        // Set categories (could come from API in a real app)
         const categoriesData = [
           'FOOD', 'TRANSPORT', 'SHOPPING', 'GROCERIES', 'ACCOMMODATION', 'ENTERTAINMENT', 'OTHERS'
         ];
         
-        setExpenses(expenseData);
-        setFilteredExpenses(expenseData);
-        setGroups(groupsData);
+        setExpenses(expensesResponse.data);
+        setFilteredExpenses(expensesResponse.data);
+        setGroups(groupsResponse.data);
         setCategories(categoriesData);
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching expenses:', error);
+        console.error('Error fetching data:', error);
+        setError('Failed to load expenses. Please try again later.');
         setLoading(false);
       }
     };
     
-    fetchExpenses();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -282,11 +211,17 @@ function ExpenseList() {
     setGroupFilter(event.target.value);
   };
 
-  const handleDeleteExpense = (expenseId) => {
-    // In a real app, this would call an API
-    console.log(`Delete expense with ID: ${expenseId}`);
-    // Then update the state
-    setExpenses(expenses.filter(expense => expense.id !== expenseId));
+  const handleDeleteExpense = async (expenseId) => {
+    try {
+      await expenseService.deleteExpense(expenseId);
+      // Update local state after successful delete
+      setExpenses(expenses.filter(expense => expense.id !== expenseId));
+      setFilteredExpenses(filteredExpenses.filter(expense => expense.id !== expenseId));
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      // Show error message to user (could use a toast/snackbar in a real app)
+      alert('Failed to delete expense. Please try again.');
+    }
   };
 
   if (loading) {

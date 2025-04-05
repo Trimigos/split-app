@@ -30,6 +30,9 @@ import {
   ArrowUpward,
   ArrowDownward
 } from '@material-ui/icons';
+import settlementService from '../../services/settlementService';
+import groupService from '../../services/groupService';
+import userService from '../../services/userService';
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -113,89 +116,37 @@ function SettlementList() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [groupFilter, setGroupFilter] = useState('all');
   const [groups, setGroups] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    // Simulate API call to fetch settlements
-    const fetchSettlements = async () => {
+    // Fetch settlements and groups from API
+    const fetchData = async () => {
       try {
-        await new Promise(resolve => setTimeout(resolve, 800));
+        setLoading(true);
         
-        // Sample data
-        const settlementData = [
-          {
-            id: 1,
-            fromUser: 'Alice Smith',
-            toUser: 'John Doe',
-            amount: 45.50,
-            description: 'Dinner at Italian Restaurant',
-            groupId: 1,
-            groupName: 'Trip to Paris',
-            status: 'COMPLETED',
-            date: '2025-03-15',
-          },
-          {
-            id: 2,
-            fromUser: 'Emma Wilson',
-            toUser: 'John Doe',
-            amount: 32.25,
-            description: 'Museum tickets',
-            groupId: 1,
-            groupName: 'Trip to Paris',
-            status: 'PENDING',
-            date: '2025-03-18',
-          },
-          {
-            id: 3,
-            fromUser: 'Michael Brown',
-            toUser: 'Bob Johnson',
-            amount: 78.30,
-            description: 'Grocery shopping',
-            groupId: 2,
-            groupName: 'Roommates',
-            status: 'PENDING',
-            date: '2025-03-20',
-          },
-          {
-            id: 4,
-            fromUser: 'John Doe',
-            toUser: 'Alice Smith',
-            amount: 22.80,
-            description: 'Taxi ride',
-            groupId: 1,
-            groupName: 'Trip to Paris',
-            status: 'CANCELLED',
-            date: '2025-03-10',
-          },
-          {
-            id: 5,
-            fromUser: 'Bob Johnson',
-            toUser: 'Emma Wilson',
-            amount: 15.75,
-            description: 'Coffee and snacks',
-            groupId: 3,
-            groupName: 'Office Lunch',
-            status: 'COMPLETED',
-            date: '2025-03-22',
-          },
-        ];
+        // Get current user info
+        const userResponse = await userService.getCurrentUser();
+        setCurrentUser(userResponse.data);
         
-        const groupsData = [
-          { id: 1, name: 'Trip to Paris' },
-          { id: 2, name: 'Roommates' },
-          { id: 3, name: 'Office Lunch' },
-        ];
+        // Fetch settlements
+        const settlementsResponse = await settlementService.getSettlements();
         
-        setSettlements(settlementData);
-        setFilteredSettlements(settlementData);
-        setGroups(groupsData);
+        // Fetch groups for filtering
+        const groupsResponse = await groupService.getGroups();
+        
+        setSettlements(settlementsResponse.data);
+        setFilteredSettlements(settlementsResponse.data);
+        setGroups(groupsResponse.data);
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching settlements:', error);
+        console.error('Error fetching settlements data:', error);
+        setError('Failed to load settlements. Please try again later.');
         setLoading(false);
       }
     };
     
-    fetchSettlements();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -384,12 +335,12 @@ function SettlementList() {
                       </TableCell>
                       <TableCell>
                         <Box display="flex" alignItems="center">
-                          {settlement.fromUser === 'John Doe' ? (
+                          {settlement.fromUser === currentUser.name ? (
                             <ArrowUpward className={classes.directionIcon} color="error" />
                           ) : (
                             <ArrowDownward className={classes.directionIcon} color="primary" />
                           )}
-                          {settlement.fromUser === 'John Doe' ? (
+                          {settlement.fromUser === currentUser.name ? (
                             <span>To {settlement.toUser}</span>
                           ) : (
                             <span>From {settlement.fromUser}</span>

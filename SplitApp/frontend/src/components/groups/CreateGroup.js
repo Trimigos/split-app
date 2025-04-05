@@ -33,6 +33,7 @@ import {
 } from '@material-ui/icons';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
+import groupService from '../../services/groupService';
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -163,13 +164,29 @@ function CreateGroup() {
     setIsSubmitting(true);
     
     try {
-      // In a real app, this would be an API call to create the group
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Create a group object to send to the API
+      const newGroupData = {
+        name: groupData.name,
+        description: groupData.description,
+        members: groupData.members
+      };
       
-      console.log('Group created:', groupData);
+      // Call the API to create the group
+      const response = await groupService.createGroup(newGroupData);
+      
+      // If we have members, add them to the group
+      if (groupData.members.length > 0) {
+        await Promise.all(
+          groupData.members.map(email => 
+            groupService.addMember(response.data.id, { email })
+          )
+        );
+      }
+      
       handleNext();
     } catch (error) {
       console.error('Error creating group:', error);
+      alert('Failed to create group. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

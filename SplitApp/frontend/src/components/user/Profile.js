@@ -7,10 +7,14 @@ import {
   TextField, 
   Button,
   Avatar,
-  Box
+  Box,
+  CircularProgress,
+  Snackbar,
+  SnackbarContent
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import axios from 'axios';
+import { green } from '@material-ui/core/colors';
+import userService from '../../services/userService';
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -30,6 +34,15 @@ const useStyles = makeStyles((theme) => ({
   submit: {
     margin: theme.spacing(3, 0, 2),
   },
+  loadingContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '50vh',
+  },
+  successSnackbar: {
+    backgroundColor: green[600],
+  },
 }));
 
 function Profile() {
@@ -41,18 +54,26 @@ function Profile() {
     lastName: '',
   });
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   useEffect(() => {
-    // Mock user data for development
-    // In a real app, this would fetch from your backend API
-    setUser({
-      username: 'user123',
-      email: 'user@example.com',
-      firstName: 'John',
-      lastName: 'Doe',
-    });
-    setLoading(false);
+    const fetchUserProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await userService.getCurrentUser();
+        setUser(response.data);
+      } catch (err) {
+        console.error('Error fetching user profile:', err);
+        setError('Failed to load profile. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
   }, []);
 
   const handleChange = (e) => {
@@ -67,17 +88,28 @@ function Profile() {
     e.preventDefault();
     
     try {
-      // This would be a real API call in production
-      // await axios.put('/api/user/profile', user);
-      alert('Profile updated successfully!');
+      setUpdating(true);
+      await userService.updateProfile(user);
+      setSuccessMessage('Profile updated successfully!');
+      setSnackbarOpen(true);
     } catch (err) {
       setError('Failed to update profile. Please try again.');
       console.error(err);
+    } finally {
+      setUpdating(false);
     }
   };
 
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
   if (loading) {
-    return <Typography>Loading profile...</Typography>;
+    return (
+      <Container className={classes.loadingContainer}>
+        <CircularProgress />
+      </Container>
+    );
   }
 
   return (
@@ -103,7 +135,7 @@ function Profile() {
                 id="firstName"
                 label="First Name"
                 name="firstName"
-                value={user.firstName}
+                value={user.firstName || ''}
                 onChange={handleChange}
               />
             </Grid>
@@ -114,7 +146,7 @@ function Profile() {
                 id="lastName"
                 label="Last Name"
                 name="lastName"
-                value={user.lastName}
+                value={user.lastName || ''}
                 onChange={handleChange}
               />
             </Grid>
@@ -125,7 +157,7 @@ function Profile() {
                 id="username"
                 label="Username"
                 name="username"
-                value={user.username}
+                value={user.username || ''}
                 onChange={handleChange}
                 disabled
               />
@@ -137,7 +169,7 @@ function Profile() {
                 id="email"
                 label="Email Address"
                 name="email"
-                value={user.email}
+                value={user.email || ''}
                 onChange={handleChange}
               />
             </Grid>
@@ -148,11 +180,24 @@ function Profile() {
             variant="contained"
             color="primary"
             className={classes.submit}
+            disabled={updating}
           >
-            Update Profile
+            {updating ? 'Updating...' : 'Update Profile'}
           </Button>
         </form>
       </Paper>
+
+      <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar}>
+        <SnackbarContent
+          className={classes.successSnackbar}
+          message={successMessage}
+          action={
+            <Button color="inherit" size="small" onClick={handleCloseSnackbar}>
+              Close
+            </Button>
+          }
+        />
+      </Snackbar>
     </Container>
   );
 }
