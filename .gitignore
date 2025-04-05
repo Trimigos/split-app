@@ -1,0 +1,37 @@
+# General
+.DS_Store
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.sublime-workspace
+.project
+.classpath
+
+# Backend - Java
+backend/target/
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+backend/*.log
+backend/logs/
+backend/.settings/
+
+# Frontend - Node/React
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.js
+frontend/coverage/
+frontend/build/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Database
+database/data/
+*.db
