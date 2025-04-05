@@ -33,11 +33,13 @@ import {
   AttachMoney,
   ArrowBack as ArrowBackIcon,
   ArrowForward as ArrowForwardIcon,
-  Check as CheckIcon
+  Check as CheckIcon,
+  Event as EventIcon
 } from '@material-ui/icons';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
-import { DatePicker } from '@material-ui/pickers';
+
+// Removing @material-ui/pickers import
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -413,17 +415,24 @@ function CreateExpense() {
                 </FormControl>
                 
                 <FormControl className={classes.formControl}>
-                  <DatePicker
-                    disableToolbar
-                    variant="inline"
-                    format="MM/dd/yyyy"
-                    margin="normal"
+                  <TextField
                     id="expenseDate"
                     label="Expense Date"
-                    value={values.expenseDate}
-                    onChange={(date) => setFieldValue('expenseDate', date)}
-                    inputVariant="outlined"
+                    type="date"
+                    value={values.expenseDate.toISOString().split('T')[0]}
+                    onChange={(e) => setFieldValue('expenseDate', new Date(e.target.value))}
+                    variant="outlined"
                     fullWidth
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <EventIcon />
+                        </InputAdornment>
+                      ),
+                    }}
                     error={touched.expenseDate && Boolean(errors.expenseDate)}
                     helperText={touched.expenseDate && errors.expenseDate}
                   />
