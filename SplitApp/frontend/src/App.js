@@ -20,6 +20,7 @@ import CreateExpense from './components/expenses/CreateExpense';
 import SettlementList from './components/settlements/SettlementList';
 import Profile from './components/user/Profile';
 import NotFound from './components/pages/NotFound';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 const theme = createTheme({
   palette: {
@@ -41,16 +42,51 @@ function App() {
           <Header />
           <main className="main-content">
             <Routes>
-              <Route path="/" element={<Dashboard />} />
+              {/* Public routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/groups" element={<GroupList />} />
-              <Route path="/groups/:id" element={<GroupDetail />} />
-              <Route path="/groups/create" element={<CreateGroup />} />
-              <Route path="/expenses" element={<ExpenseList />} />
-              <Route path="/expenses/create" element={<CreateExpense />} />
-              <Route path="/settlements" element={<SettlementList />} />
-              <Route path="/profile" element={<Profile />} />
+              
+              {/* Protected routes */}
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/groups" element={
+                <ProtectedRoute>
+                  <GroupList />
+                </ProtectedRoute>
+              } />
+              <Route path="/groups/:id" element={
+                <ProtectedRoute>
+                  <GroupDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/groups/create" element={
+                <ProtectedRoute>
+                  <CreateGroup />
+                </ProtectedRoute>
+              } />
+              <Route path="/expenses" element={
+                <ProtectedRoute>
+                  <ExpenseList />
+                </ProtectedRoute>
+              } />
+              <Route path="/expenses/create" element={
+                <ProtectedRoute>
+                  <CreateExpense />
+                </ProtectedRoute>
+              } />
+              <Route path="/settlements" element={
+                <ProtectedRoute>
+                  <SettlementList />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

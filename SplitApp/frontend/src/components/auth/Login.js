@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Avatar,
   Button,
@@ -52,7 +52,11 @@ const LoginSchema = Yup.object().shape({
 function Login() {
   const classes = useStyles();
   const navigate = useNavigate();
+  const location = useLocation();
   const [error, setError] = useState('');
+  
+  // Get the previous location or default to home page
+  const from = location.state?.from?.pathname || '/';
 
   const handleLogin = async (values, { setSubmitting }) => {
     try {
@@ -62,8 +66,8 @@ function Login() {
         // Store authentication data
         userService.setAuthData(response.data.token, response.data.user);
         
-        // Redirect to dashboard
-        navigate('/');
+        // Redirect to original intended destination
+        navigate(from, { replace: true });
       } else {
         setError('Authentication failed. Please try again.');
       }

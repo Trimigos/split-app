@@ -7,7 +7,7 @@ const userService = {
   },
   
   register: (userData) => {
-    return api.post('/auth/register', userData);
+    return api.post('/users', userData);
   },
   
   logout: () => {
