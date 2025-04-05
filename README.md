@@ -132,6 +132,107 @@ MySQL database with tables for users, groups, expenses, expense splits, and sett
 - `PUT /api/settlements/{id}/status` - Update settlement status
 - `DELETE /api/settlements/{id}` - Delete a settlement
 
+## Deployment to Azure Container Apps
+
+SplitApp can be deployed to Azure Container Apps for a production environment. This deployment includes containerized frontend and backend applications, along with an Azure Database for MySQL.
+
+### Prerequisites for Deployment
+
+- Azure CLI installed on your machine
+- Docker installed for local testing (optional)
+- An active Azure subscription
+
+### Deployment Steps
+
+1. **Prepare your environment**
+
+   Clone the repository and navigate to the project root:
+   ```
+   git clone https://github.com/yourusername/SplitApp.git
+   cd SplitApp
+   ```
+
+2. **Review and customize the deployment files**
+
+   - Review `backend/Dockerfile` and `frontend/Dockerfile` to ensure they match your requirements
+   - Check `frontend/nginx.conf` for API routing configuration
+   - Examine `main.bicep` for Azure resource definitions
+
+3. **Execute the deployment script**
+
+   Make the deployment script executable:
+   ```
+   chmod +x deploy.sh
+   ```
+
+   Run the deployment script:
+   ```
+   ./deploy.sh
+   ```
+
+   The script will:
+   - Log you into Azure
+   - Create necessary Azure resources
+   - Build and push Docker images to Azure Container Registry
+   - Deploy the application to Azure Container Apps
+   - Set up an Azure Database for MySQL
+   - Output deployment URLs and credentials
+
+4. **Verify the deployment**
+
+   After deployment completes, open the frontend URL provided in your browser to access the application.
+
+### Deployment Architecture
+
+```
+[Azure Container Registry] → [Container Apps] ← [Azure Database for MySQL]
+         ↑                       ↑ ↑
+         └─── Build/Push ────────┘ │
+                                    │
+                      [Log Analytics Workspace]
+```
+
+### Infrastructure Components
+
+- **Azure Container Apps**: Hosts the frontend and backend containers
+- **Azure Container Registry**: Stores Docker container images
+- **Azure Database for MySQL**: Hosts the application database
+- **Log Analytics Workspace**: Collects and analyzes logs from your application
+
+### Scaling and Management
+
+- Container Apps automatically scale based on HTTP traffic (1-10 replicas by default)
+- Monitor your application using the Azure Portal or Azure CLI
+- Update the application by modifying the code and re-running the deployment script
+
+### Manual Deployment
+
+If you prefer to deploy components manually:
+
+1. **Create Azure resources**
+   ```
+   az group create --name SplitAppRG --location eastus
+   ```
+
+2. **Create Azure Container Registry**
+   ```
+   az acr create --resource-group SplitAppRG --name splitappacr --sku Basic --admin-enabled true
+   ```
+
+3. **Build and push Docker images**
+   ```
+   az acr login --name splitappacr
+   cd SplitApp/backend
+   az acr build --registry splitappacr --image splitapp-backend:latest .
+   cd ../frontend
+   az acr build --registry splitappacr --image splitapp-frontend:latest .
+   ```
+
+4. **Deploy using Bicep**
+   ```
+   az deployment group create --resource-group SplitAppRG --template-file ./main.bicep --parameters appName=splitapp
+   ```
+
 ## Contributing
 
 Please feel free to submit issues or pull requests to improve the application.
