@@ -14,6 +14,7 @@
 /Users/harsha/Projects/SplitApp/SplitApp/backend/src/main/java/com/splitapp/controller/SettlementController.java
 /Users/harsha/Projects/SplitApp/SplitApp/backend/src/main/java/com/splitapp/service/UserService.java
 /Users/harsha/Projects/SplitApp/SplitApp/backend/src/main/java/com/splitapp/model/Settlement.java
+/Users/harsha/Projects/SplitApp/SplitApp/backend/src/main/java/com/splitapp/config/OpenApiConfig.java
 /Users/harsha/Projects/SplitApp/SplitApp/backend/src/main/java/com/splitapp/repository/UserRepository.java
 /Users/harsha/Projects/SplitApp/SplitApp/backend/src/main/java/com/splitapp/model/ExpenseSplit.java
 /Users/harsha/Projects/SplitApp/SplitApp/backend/src/main/java/com/splitapp/controller/UserController.java

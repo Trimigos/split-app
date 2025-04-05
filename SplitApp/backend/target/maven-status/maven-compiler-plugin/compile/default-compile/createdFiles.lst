@@ -10,6 +10,7 @@ com/splitapp/model/ExpenseSplit.class
 com/splitapp/config/SecurityConfig.class
 com/splitapp/repository/UserRepository.class
 com/splitapp/controller/UserController.class
+com/splitapp/config/OpenApiConfig.class
 com/splitapp/model/Settlement$SettlementStatus.class
 com/splitapp/repository/ExpenseRepository.class
 com/splitapp/service/SettlementService.class

@@ -12,7 +12,7 @@ import java.util.List;
 
 @Data
 @Entity
-@Table(name = "groups")
+@Table(name = "user_groups") // Changed from "groups" to avoid MySQL reserved keyword
 public class Group {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

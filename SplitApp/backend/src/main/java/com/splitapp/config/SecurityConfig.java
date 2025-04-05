@@ -23,14 +23,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .cors().and()
             .csrf().disable()
             .authorizeRequests()
-            .antMatchers("/api/**").permitAll() // For development, we'll allow all requests
-            // Swagger UI access
-            .antMatchers("/v3/api-docs/**", 
-                         "/swagger-ui/**", 
-                         "/swagger-ui.html", 
-                         "/swagger-resources/**", 
-                         "/webjars/**").permitAll()
-            .anyRequest().authenticated();
+            .antMatchers("/**").permitAll() // Allow all requests to all endpoints
+            .anyRequest().permitAll() // Redundant but explicit - all requests are permitted
+            .and().headers().frameOptions().disable(); // Disable frame options restrictions
     }
 
     @Bean
@@ -38,8 +33,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("authorization", "content-type", "x-auth-token"));
-        configuration.setExposedHeaders(Arrays.asList("x-auth-token"));
+        configuration.setAllowedHeaders(Arrays.asList("*")); // Allow all headers
+        configuration.setExposedHeaders(Arrays.asList("*")); // Expose all headers
+        configuration.setAllowCredentials(true); // Allow credentials
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
