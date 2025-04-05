@@ -14,6 +14,7 @@ import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import { makeStyles } from '@material-ui/core/styles';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
+import userService from '../../services/userService';
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -38,13 +39,8 @@ const useStyles = makeStyles((theme) => ({
 
 // Validation schema
 const RegisterSchema = Yup.object().shape({
-  firstName: Yup.string()
-    .required('First name is required'),
-  lastName: Yup.string()
-    .required('Last name is required'),
-  username: Yup.string()
-    .required('Username is required')
-    .min(3, 'Username must be at least 3 characters'),
+  name: Yup.string()
+    .required('Name is required'),
   email: Yup.string()
     .email('Invalid email address')
     .required('Email is required'),
@@ -53,7 +49,9 @@ const RegisterSchema = Yup.object().shape({
     .required('Password is required'),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref('password'), null], 'Passwords must match')
-    .required('Confirm password is required')
+    .required('Confirm password is required'),
+  phone: Yup.string()
+    .nullable()
 });
 
 function Register() {
@@ -61,15 +59,30 @@ function Register() {
   const navigate = useNavigate();
   const [error, setError] = useState('');
 
-  // For demo purposes, simulate registration
-  const handleRegister = (values, { setSubmitting }) => {
-    setTimeout(() => {
-      // In a real app, you would make an API call to register the user
-      console.log('Registration values:', values);
-      // Navigate to login page after successful registration
-      navigate('/login');
+  const handleRegister = async (values, { setSubmitting }) => {
+    try {
+      // Create user data object matching backend User model
+      const userData = {
+        name: values.name,
+        email: values.email,
+        password: values.password,
+        phone: values.phone || null
+      };
+
+      // Call the registration endpoint
+      const response = await userService.register(userData);
+      
+      if (response.data) {
+        // Registration successful
+        navigate('/login', { state: { message: 'Registration successful! Please log in.' } });
+      } else {
+        setError('Registration failed. Please try again.');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
       setSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -86,12 +99,11 @@ function Register() {
         
         <Formik
           initialValues={{
-            firstName: '',
-            lastName: '',
-            username: '',
+            name: '',
             email: '',
             password: '',
-            confirmPassword: ''
+            confirmPassword: '',
+            phone: ''
           }}
           validationSchema={RegisterSchema}
           onSubmit={handleRegister}
@@ -99,50 +111,20 @@ function Register() {
           {({ values, errors, touched, handleChange, handleBlur, isSubmitting }) => (
             <Form className={classes.form}>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    autoComplete="fname"
-                    name="firstName"
-                    variant="outlined"
-                    fullWidth
-                    id="firstName"
-                    label="First Name"
-                    autoFocus
-                    value={values.firstName}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.firstName && Boolean(errors.firstName)}
-                    helperText={touched.firstName && errors.firstName}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    variant="outlined"
-                    fullWidth
-                    id="lastName"
-                    label="Last Name"
-                    name="lastName"
-                    autoComplete="lname"
-                    value={values.lastName}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.lastName && Boolean(errors.lastName)}
-                    helperText={touched.lastName && errors.lastName}
-                  />
-                </Grid>
                 <Grid item xs={12}>
                   <TextField
+                    autoComplete="name"
+                    name="name"
                     variant="outlined"
                     fullWidth
-                    id="username"
-                    label="Username"
-                    name="username"
-                    autoComplete="username"
-                    value={values.username}
+                    id="name"
+                    label="Full Name"
+                    autoFocus
+                    value={values.name}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    error={touched.username && Boolean(errors.username)}
-                    helperText={touched.username && errors.username}
+                    error={touched.name && Boolean(errors.name)}
+                    helperText={touched.name && errors.name}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -158,6 +140,21 @@ function Register() {
                     onBlur={handleBlur}
                     error={touched.email && Boolean(errors.email)}
                     helperText={touched.email && errors.email}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    variant="outlined"
+                    fullWidth
+                    name="phone"
+                    label="Phone Number (Optional)"
+                    type="tel"
+                    id="phone"
+                    value={values.phone}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={touched.phone && Boolean(errors.phone)}
+                    helperText={touched.phone && errors.phone}
                   />
                 </Grid>
                 <Grid item xs={12}>

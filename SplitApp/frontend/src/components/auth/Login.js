@@ -17,6 +17,7 @@ import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import { makeStyles } from '@material-ui/core/styles';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
+import userService from '../../services/userService';
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -41,8 +42,9 @@ const useStyles = makeStyles((theme) => ({
 
 // Validation schema
 const LoginSchema = Yup.object().shape({
-  username: Yup.string()
-    .required('Username is required'),
+  email: Yup.string()
+    .email('Must be a valid email')
+    .required('Email is required'),
   password: Yup.string()
     .required('Password is required'),
 });
@@ -52,18 +54,24 @@ function Login() {
   const navigate = useNavigate();
   const [error, setError] = useState('');
 
-  // For demo purposes, use mock login
-  const handleLogin = (values, { setSubmitting }) => {
-    setTimeout(() => {
-      // Simulate authentication
-      if (values.username === 'demo' && values.password === 'password') {
-        // In a real app, you would store the auth token in localStorage or context
+  const handleLogin = async (values, { setSubmitting }) => {
+    try {
+      const response = await userService.login(values.email, values.password);
+      
+      if (response.data && response.data.token) {
+        // Store authentication data
+        userService.setAuthData(response.data.token, response.data.user);
+        
+        // Redirect to dashboard
         navigate('/');
       } else {
-        setError('Invalid username or password');
+        setError('Authentication failed. Please try again.');
       }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+    } finally {
       setSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -79,7 +87,7 @@ function Login() {
         {error && <Typography color="error">{error}</Typography>}
         
         <Formik
-          initialValues={{ username: '', password: '', remember: false }}
+          initialValues={{ email: '', password: '', remember: false }}
           validationSchema={LoginSchema}
           onSubmit={handleLogin}
         >
@@ -89,16 +97,16 @@ function Login() {
                 variant="outlined"
                 margin="normal"
                 fullWidth
-                id="username"
-                label="Username"
-                name="username"
-                autoComplete="username"
+                id="email"
+                label="Email Address"
+                name="email"
+                autoComplete="email"
                 autoFocus
-                value={values.username}
+                value={values.email}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                error={touched.username && Boolean(errors.username)}
-                helperText={touched.username && errors.username}
+                error={touched.email && Boolean(errors.email)}
+                helperText={touched.email && errors.email}
               />
               <TextField
                 variant="outlined"
@@ -151,12 +159,6 @@ function Login() {
             </Form>
           )}
         </Formik>
-        
-        <Box mt={3}>
-          <Typography variant="body2" color="textSecondary" align="center">
-            Demo credentials: username "demo", password "password"
-          </Typography>
-        </Box>
       </Paper>
     </Container>
   );
