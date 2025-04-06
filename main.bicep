@@ -4,6 +4,9 @@ param appName string = 'splitapp'
 @description('The location to deploy the resources')
 param location string = resourceGroup().location
 
+@description('The location to deploy the MySQL server')
+param mysqlLocation string = 'centralindia'
+
 @description('MySQL database administrator login name')
 @secure()
 param administratorLogin string
@@ -23,7 +26,7 @@ param mySqlVersion string = '8.0'
 var acrName = '${appName}acr'
 var containerAppEnvName = '${appName}-env'
 var logAnalyticsName = '${appName}-logs'
-var mysqlServerName = '${appName}-mysql'
+var mysqlServerName = 'splitapp-sql-1'
 var mysqlDbName = 'splitapp'
 
 // Create Log Analytics workspace
@@ -54,15 +57,15 @@ resource acr 'Microsoft.ContainerRegistry/registries@2021-09-01' = {
 }
 
 // Create MySQL Flexible server
-resource mySqlServer 'Microsoft.DBforMySQL/flexibleServers@2021-05-01' = {
+resource mySqlServer 'Microsoft.DBforMySQL/flexibleServers@2023-12-30' = {
   name: mysqlServerName
-  location: location
+  location: mysqlLocation
   sku: {
     name: 'Standard_B1ms'
     tier: 'Burstable'
   }
   properties: {
-    version: mySqlVersion
+    version: mySqlVersion == '8.0' ? '8.0.21' : '5.7'
     administratorLogin: administratorLogin
     administratorLoginPassword: administratorLoginPassword
     storage: {
@@ -80,7 +83,7 @@ resource mySqlServer 'Microsoft.DBforMySQL/flexibleServers@2021-05-01' = {
 }
 
 // Create MySQL database
-resource mySqlDb 'Microsoft.DBforMySQL/flexibleServers/databases@2021-05-01' = {
+resource mySqlDb 'Microsoft.DBforMySQL/flexibleServers/databases@2023-12-30' = {
   name: mysqlDbName
   parent: mySqlServer
   properties: {
@@ -90,7 +93,7 @@ resource mySqlDb 'Microsoft.DBforMySQL/flexibleServers/databases@2021-05-01' = {
 }
 
 // Create MySQL firewall rule to allow Azure services
-resource firewallRule 'Microsoft.DBforMySQL/flexibleServers/firewallRules@2021-05-01' = {
+resource firewallRule 'Microsoft.DBforMySQL/flexibleServers/firewallRules@2023-12-30' = {
   name: 'AllowAllAzureIPs'
   parent: mySqlServer
   properties: {
